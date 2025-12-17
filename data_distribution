@@ -1,0 +1,191 @@
+# Dataset A, pooled liver dataset
+dda_pg <- read.csv("/DDA data/DDAcombined_protein_ML.csv",
+                   header = TRUE, stringsAsFactors = FALSE)
+
+dda_log2all <- log2(dda_pg[, 51:62])
+dda_log2all[dda_log2all == -Inf] <- NA
+data_range <- range(as.matrix(dda_log2all), na.rm = TRUE)
+break_points <- seq(from = data_range[1], to = data_range[2], length.out = 33)  # 31 points = 30 intervals
+
+hist_dda <- hist(as.matrix(dda_log2all), breaks = break_points,
+                 col = 'skyblue', freq = FALSE, plot = FALSE)
+
+missing_prop_dda <- sum(is.na(dda_log2all)) / (ncol(dda_log2all) * nrow((dda_log2all)))
+
+hist_dda$density <- hist_dda$density * (1 - missing_prop_dda)
+
+png(filename="/figures/data_distri_DDA.png", width = 6, height = 6, units = "in",res = 400)
+
+par(lwd = 2, cex.axis = 1.2, cex.lab = 1.3, font.lab = 2,
+    mar = c(5, 5, 4, 2) + 0.1, mgp = c(3.5, 1, 0))
+
+# Plot histogram
+plot(hist_dda, breaks = 50, col = 'skyblue3', border = 'white',
+     plot = TRUE, xlim = c(3, 30), freq = FALSE,
+     xlab = expression(bold('Log'[2]*' Intensity')),
+     ylab = 'Density', main = '',
+     cex.axis = 1.2, cex.lab = 1.4, font.lab = 2,
+     lwd = 1.5, col.axis = 'black', col.lab = 'black')
+
+# Add normal distribution curve
+curve(dnorm(x, mean = 17, sd = 4), add = TRUE, col = 'red3', lwd = 4, lty = 1)
+
+# Add curve parameters as text annotation
+curve_text <- expression(paste( mu, " = 17, ", sigma, " = 4"))
+text(x = 25, y = max(hist_dda$density) * 0.88, labels = curve_text,
+     col = 'red3', cex = 1.3, font = 2, pos = 3)
+box(lwd = 3)
+
+# Reset graphical parameters
+par(lwd = 1, cex.axis = 1, cex.lab = 1, font.lab = 1,
+    mar = c(5, 4, 4, 2) + 0.1, mgp = c(3, 1, 0))
+dev.off()
+
+# Dataset B, phagoFACS dataset, 
+
+pg_R <- fread("/PhagoFACS/report.pg_matrix.tsv")
+pr_R <- fread("/PhagoFACS/report.pr_matrix.tsv")
+t_R <- table(unique(pr_R[,c('Protein.Group','Stripped.Sequence')])$Protein.Group)
+pg_R$Peptide.Count <- t_R[match(pg_R$Protein.Group,names(t_R))]
+#Filter by protein groups with <2 peptides
+df.prot_R <- filter(pg_R, Peptide.Count > 1)
+df.prot2_R <- df.prot_R[!grepl("Cont_",df.prot_R$Protein.Group),]
+df.prot.all_R <- df.prot2_R[, 5:40]
+protein.matrix_all_R <- log2(as.matrix(df.prot.all_R))
+log2all.df_R <- as.data.frame(protein.matrix_all_R)
+
+hist_R <- hist(as.matrix(log2all.df_R), breaks = 50, col = 'skyblue', freq = FALSE, xlim = c(5,30), plot = FALSE)
+missing_prop_R <- sum(is.na(log2all.df_R)) / (ncol(log2all.df_R) * nrow((log2all.df_R)))
+
+hist_R$density <- hist_R$density * (1 - missing_prop_R)
+
+png(filename="/figures/data_distri_phagoFACS.png", width = 6, height = 6, units = "in",res = 400)
+par(lwd = 2, cex.axis = 1.2, cex.lab = 1.3, font.lab = 2,
+    mar = c(5, 5, 4, 2) + 0.1, mgp = c(3.5, 1, 0))
+
+# Plot histogram
+plot(hist_R, breaks = 50, col = 'skyblue3', border = 'white',
+     plot = TRUE, xlim = c(5, 23), freq = FALSE,
+     xlab = expression(bold('Log'[2]*' Intensity')),
+     ylab = 'Density', main = '',
+     cex.axis = 1.2, cex.lab = 1.4, font.lab = 2,
+     lwd = 1.5, col.axis = 'black', col.lab = 'black')
+
+# Add normal distribution curve
+curve(dnorm(x, mean = 13.2, sd = 2.4), add = TRUE, col = 'red3', lwd = 4, lty = 1)
+
+# Add curve parameters as text annotation
+curve_text <- expression(paste( mu, " = 13.2, ", sigma, " = 2.4"))
+text(x = 23, y = max(hist_R$density) * 0.93, labels = curve_text,
+     col = 'red3', cex = 1.3, font = 1, pos = 2.6)
+  
+box(lwd = 3)
+
+# Reset graphical parameters
+par(lwd = 1, cex.axis = 1, cex.lab = 1, font.lab = 1,
+    mar = c(5, 4, 4, 2) + 0.1, mgp = c(3, 1, 0))
+
+dev.off()
+
+# Dataset C, CQE dataset
+
+pg_CQE<-fread("/CQE/HYE_3spp/report.pg_matrix.tsv")
+pr_CQE<-fread("/CQE/HYE_3spp/report.pr_matrix.tsv")
+t <- table(unique(pr_CQE[,c('Protein.Group','Stripped.Sequence')])$Protein.Group)
+pg_CQE$Peptide.Count <- t[match(pg_CQE$Protein.Group,names(t))]
+
+#Filter by protein groups with <2 peptides
+df.prot <- filter(pg_CQE, Peptide.Count > 1)
+df.prot2 <- df.prot[!grepl("Cont_",df.prot$Protein.Group),]
+df.prot.all<- df.prot2[, 5:29]
+protein.matrix_all <- log2(as.matrix(df.prot.all))
+log2all.df_CQE <- as.data.frame(protein.matrix_all)
+rownames(log2all.df_CQE) <- df.prot2$Protein.Names
+
+hist_CQE <- hist(as.matrix(log2all.df_CQE), breaks = 50, col = 'skyblue', freq = FALSE, xlim = c(5,30), plot = FALSE)
+missing_prop_CQE <- sum(is.na(log2all.df_CQE)) / (ncol(log2all.df_CQE) * nrow((log2all.df_CQE)))
+
+hist_CQE$density <- hist_CQE$density * (1 - missing_prop_CQE)
+
+png(filename="/figures/data_distri_CQE.png", width = 6, height = 6, units = "in",res = 400)
+par(lwd = 2, cex.axis = 1.2, cex.lab = 1.3, font.lab = 2,
+    mar = c(5, 5, 4, 2) + 0.1, mgp = c(3.5, 1, 0))
+
+# Plot histogram
+plot(hist_CQE, breaks = 50, col = 'skyblue3', border = 'white',
+     plot = TRUE, xlim = c(7, 25), freq = FALSE,
+     xlab = expression(bold('Log'[2]*' Intensity')),
+     ylab = 'Density', main = '',
+     cex.axis = 1.2, cex.lab = 1.4, font.lab = 2,
+     lwd = 1.5, col.axis = 'black', col.lab = 'black')
+
+# Add normal distribution curve
+curve(dnorm(x, mean = 15, sd = 2.2), add = TRUE, col = 'red3', lwd = 4, lty = 1)
+
+# Add curve parameters as text annotation
+curve_text <- expression(paste( mu, " = 15, ", sigma, " = 2.2"))
+text(x = 25, y = max(hist_CQE$density) * 0.93, labels = curve_text,
+     col = 'red3', cex = 1.3, font = 1, pos = 2.6)
+
+box(lwd = 3)
+
+# Reset graphical parameters
+par(lwd = 1, cex.axis = 1, cex.lab = 1, font.lab = 1,
+    mar = c(5, 4, 4, 2) + 0.1, mgp = c(3, 1, 0))
+dev.off()
+
+# Dataset D, pooled QC dataset
+pg_QC<-fread("/pooled_QC/report.pg_matrix_MBR.tsv")
+pr_QC<-fread("/pooled_QC/report.pr_matrix_MBR.tsv")
+
+t <- table(unique(pr_QC[,c('Protein.Group','Stripped.Sequence')])$Protein.Group)
+
+pg_QC$Peptide.Count <- t[match(pg_QC$Protein.Group,names(t))]
+#Filter by protein groups with <2 peptides
+df.prot <- filter(pg_QC, Peptide.Count > 1)
+df.prot2 <- df.prot[!grepl("Cont_",df.prot$Protein.Group),]
+df.prot.all<- df.prot2 %>% select((5:15))
+
+protein.matrix_all = log2(as.matrix(df.prot.all))
+log2all.df_QC <- as.data.frame(protein.matrix_all)
+rownames(log2all.df_QC) = df.prot2$Protein.Group
+
+hist_QC <- hist(as.matrix(log2all.df_QC), breaks = 50, col = 'skyblue', freq = FALSE, xlim = c(5,30), plot = FALSE)
+missing_prop_QC <- sum(is.na(log2all.df_QC)) / (ncol(log2all.df_QC) * nrow((log2all.df_QC)))
+
+hist_QC$density <- hist_QC$density * (1 - missing_prop_QC)
+
+png(filename="/figures/data_distri_QC.png", width = 6, height = 6, units = "in",res = 400)
+par(lwd = 2, cex.axis = 1.2, cex.lab = 1.3, font.lab = 2,
+    mar = c(5, 5, 4, 2) + 0.1, mgp = c(3.5, 1, 0))
+
+# Plot histogram
+plot(hist_QC, breaks = 50, col = 'skyblue3', border = 'white',
+     plot = TRUE, xlim = c(8, 25), freq = FALSE,
+     xlab = expression(bold('Log'[2]*' Intensity')),
+     ylab = 'Density', main = '',
+     cex.axis = 1.2, cex.lab = 1.4, font.lab = 2,
+     lwd = 1.5, col.axis = 'black', col.lab = 'black')
+
+# Add normal distribution curve
+curve(dnorm(x, mean = 16, sd = 2.4), add = TRUE, col = 'red3', lwd = 4, lty = 1)
+
+# Add curve parameters as text annotation
+curve_text <- expression(paste( mu, " = 16, ", sigma, " = 2.4"))
+text(x = 25, y = max(hist_QC$density) * 0.93, labels = curve_text,
+     col = 'red3', cex = 1.3, font = 1, pos = 2.6)
+
+box(lwd = 3)
+
+# Reset graphical parameters
+par(lwd = 1, cex.axis = 1, cex.lab = 1, font.lab = 1,
+    mar = c(5, 4, 4, 2) + 0.1, mgp = c(3, 1, 0))
+dev.off()
+
+
+
+
+
+
+
+
